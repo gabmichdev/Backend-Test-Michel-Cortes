@@ -1,0 +1,19 @@
+default_language_version:
+  python: python3.8
+
+repos:
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+        exclude: ^.*\/migrations\/.*\.py$
+        language: python
+        language_version: python3
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-ast
+      - id: trailing-whitespace
+        files: (.*\.py$|.*\.css$|.*\.js$|.*\.html$)
+        exclude: ^.*\/migrations\/.*\.py$
+      - id: check-merge-conflict

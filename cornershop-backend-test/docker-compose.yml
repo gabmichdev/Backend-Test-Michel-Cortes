@@ -1,0 +1,72 @@
+version: '3.7'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile_base
+    command: shell
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - APP_LOGGING_LEVEL=${APP_LOGGING_LEVEL:-INFO}
+      - DB_LOGGING_LEVEL=${DB_LOGGING_LEVEL:-INFO}
+      - DJANGO_SETTINGS_MODULE=backend_test.settings
+      - APP=backend_test
+      - QUEUES=celery
+      - PYTHONDONTWRITEBYTECODE=1
+      # forwarded from the host if they exist
+      - UPDATE_PYTHON_REQUIREMENTS_ON_CONTAINERSTART
+    volumes:
+      - .:/opt/cornershop/backend-test
+    ports:
+      - 8000:8000
+    depends_on:
+      - jupyterlab
+      - postgres
+      - redis
+  jupyterlab:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile_base
+    command: jupyterlab
+    ports:
+      - 8001:8000
+    volumes:
+      - .:/opt/cornershop/backend-test
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend_test.settings
+      - PYTHONDONTWRITEBYTECODE=1
+      - DJANGO_ALLOW_ASYNC_UNSAFE=true
+      - APP=backend_test
+      - QUEUES=celery
+      # forwarded from the host if they exist
+      - UPDATE_PYTHON_REQUIREMENTS_ON_CONTAINERSTART
+  postgres:
+    image: circleci/postgres:12.3-postgis
+    volumes:
+      - postgres123-data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+  testdb:
+    image: circleci/postgres:12.3-postgis-ram
+    environment:
+      - POSTGRES_USER=testdb
+      - POSTGRES_PASSWORD=testdb
+      - POSTGRES_DB=testdb
+    ports:
+      - 5433:5432
+  redis:
+    image: redis:5.0.7-alpine
+    volumes:
+      - redis-data:/data
+
+volumes:
+  postgres123-data: {}
+  redis-data: {}
+  elasticsearch-data: {}
+  dynamodb-data: {}
+  neo4j-data: {}

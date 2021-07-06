@@ -1,0 +1,50 @@
+FROM python:3.8.3-slim-buster
+
+# for access to private PyPI registry during build
+# keys will not be visible in the final image history due to the multistage build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # compiler for Python C modules
+    g++ make libc6-dev
+
+RUN apt-get install postgresql postgresql-contrib -y
+
+RUN groupadd -g 1337 cornershop && \
+    useradd -m -d /opt/cornershop -u 1337 -g cornershop cornershop
+
+USER cornershop
+
+# install Python requirements
+ADD requirements.txt /tmp/requirements.txt
+ADD --chown=cornershop:cornershop .docker/dev /usr/local/bin/
+
+RUN dev pipi -r /tmp/requirements.txt && \
+    # clean up Python modules
+    find /opt/cornershop/.local \
+    \( -type d -a -name test -o -name tests \) \
+    -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+    -exec rm -rf '{}' \;
+
+###
+
+FROM python:3.8.3-slim-buster
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    procps vim less
+
+RUN groupadd -g 1337 cornershop && \
+    useradd -m -d /opt/cornershop -u 1337 -g cornershop cornershop
+
+USER cornershop
+WORKDIR /opt/cornershop
+ENV PATH /opt/cornershop/.local/bin:$PATH
+COPY --chown=cornershop:cornershop --from=0 /opt/cornershop/.local /opt/cornershop/.local
+
+EXPOSE 8000
+
+ADD --chown=cornershop:cornershop .docker/docker-entrypoint.sh /
+ADD --chown=cornershop:cornershop .docker/dev /usr/local/bin/
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

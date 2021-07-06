@@ -1,0 +1,16 @@
+[MASTER]
+ignore=migrations,test,tests,tests.py,urls.py,urls_v2.py,urls_v3.py
+
+# run 1 pylint process
+jobs=1
+profile=no
+cache-size=500
+load-plugins=pylint_django
+
+[MESSAGES CONTROL]
+disable=C0111, # missing docstring
+        W0232  # class has no __init__ method
+
+[REPORTS]
+# Sonarqube report format
+msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}

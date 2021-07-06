@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+_usage() {
+  echo "running the server"
+  echo "    up        start the server in development mode"
+  echo ""
+  echo "testing code"
+  echo "    test      run tests, accepts test names as arguments"
+  echo "    cov       run tests with coverage"
+  echo ""
+  echo "installing Python requirements"
+  echo "    pipi      without argument: installs packages defined in requirements.txt and requirements-local.txt"
+  echo "              with argument:    installs given requirement"
+  echo ""
+  echo "migrations"
+  echo "    migrate   run pending migrations"
+  echo "    makemig   make Django migrations"
+  echo "    sqlmig    show SQL of migration without executing it"
+  echo ""
+  echo "tools"
+  echo "    black     run black"
+  echo "    isort     run isort"
+  exit 1
+}
+
+# show usage if no argument is given
+arg=${1:-}
+shift || _usage
+
+case ${arg} in
+up|run|server|runserver)
+  python manage.py runserver 0.0.0.0:8000
+;;
+celery)
+  celery -A $APP worker -Q $QUEUES
+;;
+test)
+  pytest "$@" --flake8 --isort --black --junitxml=/dev/shm/test-results/pytest.xml
+;;
+cov)
+  pytest "$@" --flake8 --isort --black --cov=backend_test --junitxml=/dev/shm/test-results/pytest.xml
+;;
+isort)
+  isort .
+;;
+black)
+  black .
+;;
+pipi)
+
+  if [ $# -gt 0 ]; then
+    pip install --no-warn-script-location --disable-pip-version-check --no-cache-dir --src=/opt/cornershop/src --user --upgrade "$@"
+  else
+    pip install --no-warn-script-location --disable-pip-version-check --no-cache-dir --src=/opt/cornershop/src --user --upgrade -r /opt/cornershop/backend-test/requirements.txt
+    if [[ -f /opt/cornershop/backend-test/requirements-local.txt ]]; then
+      pip install --no-warn-script-location --disable-pip-version-check --no-cache-dir --src=/opt/cornershop/src --user --upgrade -r /opt/cornershop/backend-test/requirements-local.txt
+    fi
+  fi
+;;
+migrate)
+  python manage.py migrate "$@"
+;;
+makemigrations|makemigration|makemig)
+  python manage.py makemigrations "$@"
+;;
+sqlmig|sqlmigrate|sqlmigration)
+  python manage.py sqlmigrate "$@"
+;;
+*)
+  _usage
+;;
+esac
