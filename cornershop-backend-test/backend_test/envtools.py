@@ -12,8 +12,8 @@ def getenv(
     default: str = NODEFAULT,
     coalesce: Callable[[str], T] = lambda value: value
 ) -> T:
-    """ Get environment variable value, try to safety parse it and apply coalesce
-        function (identity as default).
+    """Get environment variable value, try to safety parse it and apply coalesce
+    function (identity as default).
     """
     value = os.environ[name] if default is NODEFAULT else os.getenv(name, default)
     try:

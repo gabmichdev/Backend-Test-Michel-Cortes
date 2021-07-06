@@ -30,7 +30,7 @@ shift || _usage
 
 case ${arg} in
 up|run|server|runserver)
-  python manage.py runserver 0.0.0.0:8000
+  python manage.py wait_for_db && python manage.py migrate && python manage.py runserver 0.0.0.0:8000
 ;;
 celery)
   celery -A $APP worker -Q $QUEUES
