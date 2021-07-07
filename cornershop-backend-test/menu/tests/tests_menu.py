@@ -9,6 +9,7 @@ from dateutil import parser
 
 from core.models import Menu
 from menu.serializers import MenuDetailSerializer, MenuSerializer, get_meal_time
+from core.utils.date_utils import generate_day_range_for_date, is_between
 
 MENU_URL = reverse("menu:menu-list")
 
@@ -145,3 +146,18 @@ class PrivateMenuAPITests(TestCase):
 
         serializer = MenuDetailSerializer(menu)
         self.assertEqual(res.data, serializer.data)
+
+    def test_weekday_filter(self):
+        """Test that only menus for a specific day is returned"""
+        preparation_date = timezone.now()
+        gte, lte = generate_day_range_for_date(preparation_date)
+        preparation_date_string = preparation_date.isoformat()
+        weekday = preparation_date.isoweekday()
+
+        sample_menu(user=self.user, preparation_date=preparation_date_string)
+
+        res = self.client.get(MENU_URL)
+
+        for menu in res.data:
+            self.assertEqual(menu["weekday"], weekday)
+            self.assertTrue(is_between(preparation_date, lte, gte))

@@ -1,9 +1,12 @@
+import datetime
+
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from core.models import Menu
 from menu.serializers import MenuDetailSerializer, MenuSerializer
+from core.utils.date_utils import generate_day_range_for_date
 
 
 class MenuViewSet(viewsets.ModelViewSet):
@@ -19,6 +22,13 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
+        preparation_date = self.request.query_params.get("preparation_date")
+        if preparation_date:
+            gte, lte = generate_day_range_for_date(preparation_date)
+            self.queryset = self.queryset.filter(
+                preparation_date__gte=gte,
+                preparation_date__lte=lte,
+            )
         return self.queryset.filter(added_by_user=self.request.user).order_by(
             "-weekday"
         )

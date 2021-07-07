@@ -8,6 +8,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext as _
 
+from dateutil import parser
+
 
 class UserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra):
@@ -93,14 +95,21 @@ class Menu(models.Model):
             choice[1] for choice in self.MEAL_TIMES if self.meal_time == choice[0]
         )
 
+        if isinstance(self.created_at, str):
+            self.created_at = parser.parse(self.created_at)
+        if isinstance(self.modified_at, str):
+            self.modified_at = parser.parse(self.modified_at)
+        if isinstance(self.preparation_date, str):
+            self.preparation_date = parser.parse(self.preparation_date)
+
         return _(
             f"""Opcion de menu del dia {weekday_name.lower()}:
         Horario: {meal_time_name}
         Plato fuerte o principal: {self.main_dish}
         Guarnicion: {self.main_dish}
         Postre: {self.dessert}
-        Creado: {self.created_at.isoformat()}
-        Modificado: {self.modified_at.isoformat()}
-        Para prepararse: {self.preparation_date.isoformat()}
+        Creado: {self.created_at}
+        Modificado: {self.modified_at}
+        Para prepararse: {self.preparation_date}
         """
         )
