@@ -1,8 +1,17 @@
+from datetime import datetime
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from core.models import Menu
 
 
-class ModelTests(TestCase):
+def sample_user(username="test123", password="test123"):
+    """Create sample user"""
+    return get_user_model().objects.create_user(username=username, password=password)
+
+
+class UserModelTests(TestCase):
+    """Tests for the user model"""
+
     def test_create_user_successful(self):
         """Test creating a new user with username is successful"""
         username = "testuser1"
@@ -22,3 +31,50 @@ class ModelTests(TestCase):
         )
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+
+class MenuModelTests(TestCase):
+    """Tests for the menu model"""
+
+    def test_dishes_are_capitalized(self):
+        """Test that the names of the dishes are capitalized"""
+        menu_item = {
+            "main_dish": "pechuga de pavo",
+            "side_dish": "pure de papa",
+            "dessert": "pastel",
+            "added_by_user": sample_user(),
+        }
+
+        Menu.objects.create(**menu_item)
+        menu = Menu.objects.get(main_dish=menu_item["main_dish"].capitalize())
+        self.assertEqual(menu_item["main_dish"].capitalize(), menu.main_dish)
+        self.assertEqual(menu_item["side_dish"].capitalize(), menu.side_dish)
+        self.assertEqual(menu_item["dessert"].capitalize(), menu.dessert)
+
+    def test_day_number_corresponds_if_not_specified(self):
+        """
+        Test that the day number corresponds correctly
+        to todays if left blank
+        """
+        menu_item = {
+            "main_dish": "pechuga de pavo",
+            "side_dish": "pure de papa",
+            "dessert": "pastel",
+            "added_by_user": sample_user(),
+        }
+
+        menu = Menu.objects.create(**menu_item)
+        today = datetime.today().isoweekday()
+
+        self.assertEqual(menu.day, today)
+
+    def test_inserting_field_with_human_readable_string_raises_error(self):
+        """Test creating menu with human readable string for field gives error"""
+        menu_item = {
+            "main_dish": "pechuga de pavo",
+            "side_dish": "pure de papa",
+            "dessert": "pastel",
+            "added_by_user": sample_user(),
+            "meal_time": "Desayuno",
+        }
+        self.assertRaises(ValueError, Menu.objects.create, **menu_item)
