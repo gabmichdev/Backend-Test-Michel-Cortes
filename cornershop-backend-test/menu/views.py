@@ -23,14 +23,19 @@ class MenuViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
         preparation_date = self.request.query_params.get("preparation_date")
+        order_by = self.request.query_params.get("order_by") or "weekday"
+        sort = self.request.query_params.get("sort") or ""
+        sort = "-" if sort == "desc" else ""
+
         if preparation_date:
             gte, lte = generate_day_range_for_date(preparation_date)
             self.queryset = self.queryset.filter(
                 preparation_date__gte=gte,
                 preparation_date__lte=lte,
             )
+
         return self.queryset.filter(added_by_user=self.request.user).order_by(
-            "-weekday"
+            f"{sort}{order_by}"
         )
 
     def perform_create(self, serializer):
