@@ -1,10 +1,9 @@
-from django import views
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from core.models import Menu
-from menu.serializers import MenuSerializer, MenuDetailSerializer
+from menu.serializers import MenuDetailSerializer, MenuSerializer
 
 
 class MenuViewSet(viewsets.ModelViewSet):
@@ -20,7 +19,9 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
-        return self.queryset.filter(added_by_user=self.request.user).order_by("-day")
+        return self.queryset.filter(added_by_user=self.request.user).order_by(
+            "-weekday"
+        )
 
     def perform_create(self, serializer):
         """Create a new menu object"""

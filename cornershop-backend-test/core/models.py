@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -6,6 +5,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import ugettext as _
 
 
@@ -67,32 +67,40 @@ class Menu(models.Model):
         (3, _("Cena")),
         (4, _("After")),
     )
-    
-    day = models.PositiveSmallIntegerField(
-        choices=DOW_CHOICES, default=datetime.today().isoweekday()
-    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    preparation_date = models.DateTimeField(default=timezone.now)
     main_dish = CapitalField(max_length=255)
     side_dish = CapitalField(max_length=255)
     dessert = CapitalField(max_length=255)
     meal_time = models.PositiveSmallIntegerField(choices=MEAL_TIMES, default=2)
+    weekday = models.PositiveSmallIntegerField(
+        choices=DOW_CHOICES,
+        default=timezone.now().isoweekday(),
+    )
     added_by_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.CASCADE,
     )
 
     def __str__(self):
-        day_name = (
-            next(choice[1] for choice in self.DOW_CHOICES if self.day == choice[0])
+        weekday_name = (
+            next(choice[1] for choice in self.DOW_CHOICES if self.weekday == choice[0])
             or ""
         )
         meal_time_name = next(
             choice[1] for choice in self.MEAL_TIMES if self.meal_time == choice[0]
         )
+
         return _(
-            f"""Opcion de menu del dia {day_name.lower()}:
+            f"""Opcion de menu del dia {weekday_name.lower()}:
         Horario: {meal_time_name}
         Plato fuerte o principal: {self.main_dish}
         Guarnicion: {self.main_dish}
-        Postre: {self.main_dish}
+        Postre: {self.dessert}
+        Creado: {self.created_at.isoformat()}
+        Modificado: {self.modified_at.isoformat()}
+        Para prepararse: {self.preparation_date.isoformat()}
         """
         )

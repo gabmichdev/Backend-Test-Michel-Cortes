@@ -1,11 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from dateutil import parser
+
 from core.models import Menu
-from menu.serializers import MenuDetailSerializer, MenuSerializer
+from menu.serializers import MenuDetailSerializer, MenuSerializer, get_meal_time
 
 MENU_URL = reverse("menu:menu-list")
 
@@ -29,8 +32,6 @@ def sample_menu(user, **params):
         "main_dish": "Sample dish",
         "side_dish": "Side sample",
         "dessert": "Cake",
-        "day": 6,
-        "meal_time": 3,
     }
     defaults.update(params)
 
@@ -102,36 +103,44 @@ class PrivateMenuAPITests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_creating_a_menu(self):
-        """Test creating a new menu"""
+        """Test creating a new menu and checking the generated fields"""
+        timezone.activate("America/Mexico_City")
         payload = {
             "main_dish": "Sample dish",
             "side_dish": "Side sample",
             "dessert": "Cake",
-            "day": 2,
-            "meal_time": 1,
+            "preparation_date": timezone.now().isoformat(),
         }
 
         res = self.client.post(MENU_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            res.data["weekday"], parser.parse(res.data["preparation_date"]).isoweekday()
+        )
+        self.assertEqual(
+            res.data["meal_time"],
+            get_meal_time(parser.parse(res.data["preparation_date"]).hour),
+        )
+        timezone.deactivate()
 
     def test_partial_update_menu(self):
         """Test updating a menu with patch"""
         menu = sample_menu(user=self.user)
 
-        payload = {"main_dish": "New main", "day": 3}
+        payload = {"main_dish": "New main", "weekday": 3}
         url = detail_url(menu.id)
         self.client.patch(url, payload)
         menu.refresh_from_db()
 
         self.assertEqual(menu.main_dish, payload["main_dish"])
-        self.assertEqual(menu.day, payload["day"])
+        self.assertEqual(menu.weekday, payload["weekday"])
 
     def test_get_menu_detail(self):
         """Test that the menu detail is returned"""
         menu = sample_menu(user=self.user)
         url = detail_url(menu.id)
-        
+
         res = self.client.get(url)
 
         serializer = MenuDetailSerializer(menu)

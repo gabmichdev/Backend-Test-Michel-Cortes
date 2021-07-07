@@ -66,7 +66,7 @@ class MenuModelTests(TestCase):
         menu = Menu.objects.create(**menu_item)
         today = datetime.today().isoweekday()
 
-        self.assertEqual(menu.day, today)
+        self.assertEqual(menu.weekday, today)
 
     def test_inserting_field_with_human_readable_string_raises_error(self):
         """Test creating menu with human readable string for field gives error"""
