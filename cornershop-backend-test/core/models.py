@@ -67,6 +67,7 @@ class Menu(models.Model):
         (3, _("Cena")),
         (4, _("After")),
     )
+    
     day = models.PositiveSmallIntegerField(
         choices=DOW_CHOICES, default=datetime.today().isoweekday()
     )
@@ -76,7 +77,22 @@ class Menu(models.Model):
     meal_time = models.PositiveSmallIntegerField(choices=MEAL_TIMES, default=2)
     added_by_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        models.SET_NULL,
-        null=True,
-        to_field="username",
+        models.CASCADE,
     )
+
+    def __str__(self):
+        day_name = (
+            next(choice[1] for choice in self.DOW_CHOICES if self.day == choice[0])
+            or ""
+        )
+        meal_time_name = next(
+            choice[1] for choice in self.MEAL_TIMES if self.meal_time == choice[0]
+        )
+        return _(
+            f"""Opcion de menu del dia {day_name.lower()}:
+        Horario: {meal_time_name}
+        Plato fuerte o principal: {self.main_dish}
+        Guarnicion: {self.main_dish}
+        Postre: {self.main_dish}
+        """
+        )

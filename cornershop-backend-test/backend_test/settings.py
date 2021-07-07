@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "backend_test.utils",
     "core",
     "users",
+    "menu",
 ]
 
 MIDDLEWARE = [
