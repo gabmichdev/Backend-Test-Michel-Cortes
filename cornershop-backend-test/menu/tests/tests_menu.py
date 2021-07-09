@@ -8,8 +8,9 @@ from rest_framework.test import APIClient
 from dateutil import parser
 
 from core.models import Menu
-from menu.serializers import MenuDetailSerializer, MenuSerializer, get_meal_time
+from menu.serializers import MenuDetailSerializer, MenuSerializer
 from core.utils.date_utils import generate_day_range_for_date, is_between
+from django.contrib.sites.models import Site
 
 MENU_URL = reverse("menu:menu-list")
 
@@ -46,10 +47,10 @@ class PublicMenuAPITests(TestCase):
         self.client = APIClient()
 
     def test_retrieve_user_unauthorized(self):
-        """Test that authentication is required for users"""
+        """Test that authentication is not required for users for safe method"""
         res = self.client.get(MENU_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
 
 class PrivateMenuAPITests(TestCase):
@@ -65,7 +66,7 @@ class PrivateMenuAPITests(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_staff_permissions_for_user(self):
-        """Test that user needs staff status to interact with this endpoint"""
+        """Test that user does not need staff status to interact with this endpoint"""
         self.user_payload = {
             "username": "testuser30",
             "password": "test123.@1",
@@ -75,7 +76,7 @@ class PrivateMenuAPITests(TestCase):
         self.client.force_authenticate(user=self.user)
         res = self.client.get(MENU_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_retrieve_menus(self):
         """Test that inserted menus are retrieved"""
@@ -89,19 +90,16 @@ class PrivateMenuAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_menus_limited_to_user(self):
-        """Test retrieving menus for user"""
+    def test_menus_not_limited_to_user(self):
+        """Test retrieving created menus available to all users and non users"""
         user2 = get_user_model().objects.create_superuser("otherstaff", "password123")
         sample_menu(user=user2)
         sample_menu(user=self.user)
 
         res = self.client.get(MENU_URL)
 
-        menus = Menu.objects.filter(added_by_user=self.user)
-        serializer = MenuSerializer(menus, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data, serializer.data)
+        self.assertEqual(len(res.data), 2)
 
     def test_creating_a_menu(self):
         """Test creating a new menu and checking the generated fields"""
@@ -118,10 +116,6 @@ class PrivateMenuAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
             res.data["weekday"], parser.parse(res.data["preparation_date"]).isoweekday()
-        )
-        self.assertEqual(
-            res.data["meal_time"],
-            get_meal_time(parser.parse(res.data["preparation_date"]).hour),
         )
         timezone.deactivate()
 
@@ -161,3 +155,11 @@ class PrivateMenuAPITests(TestCase):
         for menu in res.data:
             self.assertEqual(menu["weekday"], weekday)
             self.assertTrue(is_between(preparation_date, lte, gte))
+
+    def test_generate_url(self):
+        menu = sample_menu(user=self.user)
+        menu_url = detail_url(menu.id)
+        print(menu_url)
+        site_url = Site.objects.get_current().domain
+        full_url = "https://%s%s" % (site_url, menu_url)
+        print(full_url)

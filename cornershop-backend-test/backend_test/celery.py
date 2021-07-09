@@ -1,8 +1,11 @@
-import os
+import logging
 
 from celery import Celery
 
 from .envtools import getenv
+from menu.tasks.send_menu import (
+    send_todays_menu_to_slack as send_todays_menu_to_slack_task,
+)
 
 
 class CelerySettings:
@@ -63,10 +66,21 @@ class CelerySettings:
     CELERYD_POOL_RESTARTS = True
 
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend_test.settings")
-
 settings = CelerySettings()
 
 app = Celery("backend_test")
 app.config_from_object(settings)
 app.autodiscover_tasks()
+
+
+app.conf.beat_schedule = {
+    "add-every-30-seconds": {
+        "task": "send_todays_menu_to_slack_task",
+        "schedule": 10.0,
+    },
+}
+
+
+@app.task(name="send_todays_menu_to_slack_task")
+def send_todays_menu_to_slack():
+    send_todays_menu_to_slack_task()

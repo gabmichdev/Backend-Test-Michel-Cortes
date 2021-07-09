@@ -48,10 +48,13 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_extensions",
     "backend_test.utils",
+    "django.contrib.sites",
     "core",
     "users",
     "menu",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "backend_test.middleware.HealthCheckAwareSessionMiddleware",

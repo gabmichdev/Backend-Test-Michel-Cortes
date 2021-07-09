@@ -86,12 +86,32 @@ class Menu(models.Model):
         models.CASCADE,
     )
 
+    @staticmethod
+    def _get_human_readable_value(index, attr) -> str:
+        """Get string representation of the index value from model choices
+
+        Args:
+            index (int): Index value for model choices.
+            attr (str): Name of the choice class attribute.
+
+        Returns:
+            str: Human readable representation of the index value.
+        """
+        return (
+            next(
+                choice[1]
+                for choice in getattr(Menu, attr, "DOW_CHOICES")
+                if index == choice[0]
+            )
+            or ""
+        )
+
     def __str__(self):
-        weekday_name = (
+        self.weekday_name = (
             next(choice[1] for choice in self.DOW_CHOICES if self.weekday == choice[0])
             or ""
         )
-        meal_time_name = next(
+        self.meal_time_name = next(
             choice[1] for choice in self.MEAL_TIMES if self.meal_time == choice[0]
         )
 
@@ -101,15 +121,11 @@ class Menu(models.Model):
             self.modified_at = parser.parse(self.modified_at)
         if isinstance(self.preparation_date, str):
             self.preparation_date = parser.parse(self.preparation_date)
-
+        # Horario: {self.meal_time_name}
         return _(
-            f"""Opcion de menu del dia {weekday_name.lower()}:
-        Horario: {meal_time_name}
+            f"""Opcion %s:
         Plato fuerte o principal: {self.main_dish}
-        Guarnicion: {self.main_dish}
+        Guarnicion: {self.side_dish}
         Postre: {self.dessert}
-        Creado: {self.created_at}
-        Modificado: {self.modified_at}
-        Para prepararse: {self.preparation_date}
         """
         )

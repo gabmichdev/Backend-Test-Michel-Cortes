@@ -2,11 +2,29 @@ import datetime
 
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import (
+    BasePermission,
+    IsAdminUser,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+    SAFE_METHODS,
+)
 
 from core.models import Menu
 from menu.serializers import MenuDetailSerializer, MenuSerializer
 from core.utils.date_utils import generate_day_range_for_date
+
+
+class IsAuthenticatedStaffOrReadOnly(BasePermission):
+    """Safe requests are open an unauthenticated but unsafe are made by staff"""
+
+    def has_permission(self, request, view):
+        return bool(
+            request.method in SAFE_METHODS
+            or request.user
+            and request.user.is_authenticated
+            and request.user.is_staff
+        )
 
 
 class MenuViewSet(viewsets.ModelViewSet):
@@ -15,10 +33,7 @@ class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
     authentication_classes = (TokenAuthentication,)
-    permission_classes = (
-        IsAuthenticated,
-        IsAdminUser,
-    )
+    permission_classes = (IsAuthenticatedStaffOrReadOnly,)
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
@@ -34,9 +49,7 @@ class MenuViewSet(viewsets.ModelViewSet):
                 preparation_date__lte=lte,
             )
 
-        return self.queryset.filter(added_by_user=self.request.user).order_by(
-            f"{sort}{order_by}"
-        )
+        return self.queryset.order_by(f"{sort}{order_by}")
 
     def perform_create(self, serializer):
         """Create a new menu object"""
