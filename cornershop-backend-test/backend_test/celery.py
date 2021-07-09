@@ -1,11 +1,10 @@
-import logging
-
 from celery import Celery
 
-from .envtools import getenv
 from menu.tasks.send_menu import (
     send_todays_menu_to_slack as send_todays_menu_to_slack_task,
 )
+
+from .envtools import getenv
 
 
 class CelerySettings:

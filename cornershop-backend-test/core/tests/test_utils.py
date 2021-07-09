@@ -1,5 +1,4 @@
 from datetime import datetime
-from pprint import pprint
 from unittest import mock
 
 from django.test import TestCase

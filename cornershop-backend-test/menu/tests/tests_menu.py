@@ -8,9 +8,8 @@ from rest_framework.test import APIClient
 from dateutil import parser
 
 from core.models import Menu
-from menu.serializers import MenuDetailSerializer, MenuSerializer
 from core.utils.date_utils import generate_day_range_for_date, is_between
-from django.contrib.sites.models import Site
+from menu.serializers import MenuDetailSerializer, MenuSerializer
 
 MENU_URL = reverse("menu:menu-list")
 
@@ -115,7 +114,8 @@ class PrivateMenuAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
-            res.data["weekday"], parser.parse(res.data["preparation_date"]).isoweekday()
+            res.data["weekday"],
+            parser.parse(res.data["preparation_date"]).isoweekday(),
         )
         timezone.deactivate()
 
@@ -155,11 +155,3 @@ class PrivateMenuAPITests(TestCase):
         for menu in res.data:
             self.assertEqual(menu["weekday"], weekday)
             self.assertTrue(is_between(preparation_date, lte, gte))
-
-    def test_generate_url(self):
-        menu = sample_menu(user=self.user)
-        menu_url = detail_url(menu.id)
-        print(menu_url)
-        site_url = Site.objects.get_current().domain
-        full_url = "https://%s%s" % (site_url, menu_url)
-        print(full_url)

@@ -1,14 +1,13 @@
-from typing import List
 import logging
 from collections import defaultdict
 from datetime import datetime
+from typing import List
 
 from django.urls import reverse
 
 from backend_test.envtools import getenv
-from core.utils.slack_client import SlackRESTClient
 from core.utils.date_utils import generate_day_range_for_date
-
+from core.utils.slack_client import SlackRESTClient
 
 logger = logging.getLogger("backend_test")
 
@@ -26,8 +25,9 @@ def detail_url(menu_id):
 
 def send_todays_menu_to_slack():
 
-    from core.models import Menu
     from django.contrib.sites.models import Site
+
+    from core.models import Menu
 
     # Retrieve menus for today
     try:
@@ -44,7 +44,7 @@ def send_todays_menu_to_slack():
             weekday_name = ""
             output_message = """
         Menu de hoy %s:\n"""
-            weekday_name = Menu._get_human_readable_value(
+            weekday_name = Menu.get_human_readable_value(
                 now.isoweekday(), "DOW_CHOICES"
             ).lower()
             output_message = output_message.replace("%s", weekday_name)
@@ -56,7 +56,7 @@ def send_todays_menu_to_slack():
             meal_time_menus = defaultdict(list)
             for menu in menus:
                 # Get name of meal instead of 1, 2, 3, etc.
-                meal_time_name = Menu._get_human_readable_value(
+                meal_time_name = Menu.get_human_readable_value(
                     menu.meal_time, "MEAL_TIMES"
                 ).lower()
                 meal_message = f"Opciones para {meal_time_name}"
@@ -81,7 +81,7 @@ def send_todays_menu_to_slack():
             output_message = get_menu_message(menus_found)
         else:
             output_message = "El dia de hoy no hay menus, una disculpa."
-        output_message += f"\nQue tengas excelente dia!"
+        output_message += "\nQue tengas excelente dia!"
         logger.info(str(output_message))
         # Send message to slack
         conversation_id = client.get_slack_conversation(CONVERSATION_NAME)

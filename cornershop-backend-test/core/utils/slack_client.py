@@ -25,7 +25,6 @@ def set_endpoint(endpoint_name):
         def wrapper(*args, **kwargs):
             self: SlackRESTClient = args[0]
             self.current_endpoint = endpoint_name
-            print(self.current_endpoint)
             return func(*args, **kwargs)
 
         return wrapper

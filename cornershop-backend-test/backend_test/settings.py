@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "core",
     "users",
     "menu",
+    "menu_selection",
 ]
 
 SITE_ID = 1

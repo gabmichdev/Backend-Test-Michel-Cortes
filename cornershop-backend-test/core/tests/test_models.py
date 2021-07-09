@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from core.models import Menu
+from core.models import Menu, MenuSelection
 
 
 def sample_user(username="test123", password="test123"):
@@ -69,7 +69,8 @@ class MenuModelTests(TestCase):
         self.assertEqual(menu.weekday, today)
 
     def test_inserting_field_with_human_readable_string_raises_error(self):
-        """Test creating menu with human readable string for field gives error"""
+        """Test creating menu with human readable string for field gives
+        error"""
         menu_item = {
             "main_dish": "pechuga de pavo",
             "side_dish": "pure de papa",
@@ -78,3 +79,28 @@ class MenuModelTests(TestCase):
             "meal_time": "Desayuno",
         }
         self.assertRaises(ValueError, Menu.objects.create, **menu_item)
+
+
+class MenuSelectionModelTests(TestCase):
+    """Tests for the menu selection model"""
+
+    def test_user_is_saved_when_register_menu(self):
+        """Test that the user that created the menu is the one saved"""
+        menu_item = {
+            "main_dish": "pechuga de pavo",
+            "side_dish": "pure de papa",
+            "dessert": "pastel",
+            "added_by_user": sample_user(),
+            "meal_time": 1,
+        }
+        menu = Menu.objects.create(**menu_item)
+        user = menu_item["added_by_user"]
+
+        menu_selection_item = {
+            "menu": menu,
+            "user": user,
+            "customizations": "Agregar dos porciones del pure de papa",
+        }
+        menu_selection = MenuSelection.objects.create(**menu_selection_item)
+        self.assertEqual(user, menu_selection.user)
+        self.assertEqual(menu, menu_selection.menu)

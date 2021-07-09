@@ -87,7 +87,7 @@ class Menu(models.Model):
     )
 
     @staticmethod
-    def _get_human_readable_value(index, attr) -> str:
+    def get_human_readable_value(index, attr) -> str:
         """Get string representation of the index value from model choices
 
         Args:
@@ -107,21 +107,12 @@ class Menu(models.Model):
         )
 
     def __str__(self):
-        self.weekday_name = (
-            next(choice[1] for choice in self.DOW_CHOICES if self.weekday == choice[0])
-            or ""
-        )
-        self.meal_time_name = next(
-            choice[1] for choice in self.MEAL_TIMES if self.meal_time == choice[0]
-        )
-
         if isinstance(self.created_at, str):
             self.created_at = parser.parse(self.created_at)
         if isinstance(self.modified_at, str):
             self.modified_at = parser.parse(self.modified_at)
         if isinstance(self.preparation_date, str):
             self.preparation_date = parser.parse(self.preparation_date)
-        # Horario: {self.meal_time_name}
         return _(
             f"""Opcion %s:
         Plato fuerte o principal: {self.main_dish}
@@ -129,3 +120,19 @@ class Menu(models.Model):
         Postre: {self.dessert}
         """
         )
+
+
+class MenuSelection(models.Model):
+    """Menu selection for a user"""
+
+    selected_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.CASCADE,
+    )
+    menu = models.ForeignKey(
+        Menu,
+        models.CASCADE,
+    )
+    customizations = models.TextField()
