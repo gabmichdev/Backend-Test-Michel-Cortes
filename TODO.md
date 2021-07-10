@@ -59,4 +59,7 @@
   self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
   AssertionError: 422 != 400
   ```
+  *Update* Fixed error, another assertion (after this one) was causing this one
+  to give that error, removed said assertion since it was not correct either
+  way.
  
