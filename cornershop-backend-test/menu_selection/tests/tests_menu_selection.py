@@ -1,8 +1,13 @@
+from datetime import datetime, timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
+
+import pytz
 
 from core.models import Menu, MenuSelection
 from menu_selection.serializers import MenuSelectionSerializer
@@ -80,7 +85,7 @@ class PrivateMenuAPITests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_creating_a_menu_selection(self):
-        """Test creating a new menu selection"""
+        """Test creating a new menu selection for specific user"""
         staff_user_payload = {
             "username": "testuser304",
             "password": "test123.@1",
@@ -94,5 +99,73 @@ class PrivateMenuAPITests(TestCase):
         }
 
         res = self.client.post(MENU_SELECTION_URL, payload)
-
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["user"]["username"], self.user.username)
+
+    def test_retrieval_of_menu_for_selecting_user_and_staff(self):
+        """Test that normal users can only retrieve their own selections"""
+        staff_user_payload = {
+            "username": "testuser304",
+            "password": "test123.@1",
+        }
+        staff_user = create_staff_user(**staff_user_payload)
+        menu1 = sample_menu(staff_user, main_dish="This is different")
+        menu2 = sample_menu(staff_user, main_dish="Soy vegano")
+        payload1 = {
+            "menu": menu1,
+            "user": staff_user,
+            "customizations": "Extra main dish ration",
+        }
+        payload2 = {
+            "menu": menu2,
+            "user": self.user,
+            "customizations": "I want a berry good drink",
+        }
+        MenuSelection.objects.create(**payload1)
+        MenuSelection.objects.create(**payload2)
+
+        res = self.client.get(MENU_SELECTION_URL)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["user"]["username"], self.user.username)
+
+        self.client.force_authenticate(user=staff_user)
+        res = self.client.get(MENU_SELECTION_URL)
+        self.assertEqual(len(res.data), 2)
+
+    def test_creating_selection_conditions(self):
+        """
+        Tests that users can only select a menu before 11 AM and only
+        the menu for today
+        """
+        staff_user_payload = {
+            "username": "testuser304",
+            "password": "test123.@1",
+        }
+        staff_user = create_staff_user(**staff_user_payload)
+
+        preparation_date = datetime.now().replace(tzinfo=pytz.UTC)
+        preparation_date -= timedelta(days=1)
+
+        menu = sample_menu(
+            staff_user,
+            preparation_date=preparation_date,
+        )
+        payload = {
+            "menu": menu.id,
+            "user": self.user,
+            "customizations": "Cake de chocolate",
+        }
+
+        res = self.client.post(MENU_SELECTION_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            res.data["menu"][0],
+            "El menu seleccionado no es del dia de hoy",
+        )
+        # This test can only be ran if it is ran after 11 AM UTC
+        if timezone.now().hour >= 11:
+            self.assertEqual(
+                res.data["menu"][1],
+                "El menu seleccionado no es del dia de hoy",
+            )

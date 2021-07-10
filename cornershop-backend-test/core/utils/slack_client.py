@@ -80,6 +80,8 @@ class SlackRESTClient:
     def _build_url(self):
         if self._current_endpoint is not None:
             self._url = f"{self.__base_url}{self._current_endpoint}"
+        else:
+            self._url = self.__base_url
 
     @validate_slack_request
     def _make_request(
