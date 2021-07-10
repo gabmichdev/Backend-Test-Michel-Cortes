@@ -18,6 +18,7 @@ services:
       - UPDATE_PYTHON_REQUIREMENTS_ON_CONTAINERSTART
       - SLACK_BOT_TOKEN=xoxb-2275920038608-2258436990404-K4HzI8kbxKEnRqOSh4sW0rCk
       - CONVERSATION_NAME=cornershop-backend-test
+      - SLACK_BASE_URL=https://slack.com/api/
     volumes:
       - .:/opt/cornershop/backend-test
     ports:

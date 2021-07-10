@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 
 from menu.tasks.send_menu import (
     send_todays_menu_to_slack as send_todays_menu_to_slack_task,
@@ -75,7 +76,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "add-every-30-seconds": {
         "task": "send_todays_menu_to_slack_task",
-        "schedule": 10.0,
+        "schedule": crontab(hour=8),
     },
 }
 

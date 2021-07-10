@@ -20,7 +20,7 @@
 ## Known improvements
 
 - Setup a series of internal debugging tools that automatically turn off based
-  on an environment variable.
+  on an environment variable (or contextualize the one given already).
 - Make a robust implementation to deal with timezone issues. App is using UTC
   as the timezone, which would make people eat breakfast quite early.
 - Implement translation module correctly to translate errors and messages.
